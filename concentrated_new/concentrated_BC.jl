@@ -150,3 +150,54 @@ function BC_PT(alpha, delta, n, w, p, theta)
     end
     return real(val)
 end
+# Berry curvature over all plaquettes
+function bc_no_spinors(points, spacing, vF, kappa, delt, alph, pure_pos = false)
+    berry_list = Array{Float64}(undef, size(points, 1))
+    P_list = Array{ComplexF64}(undef, size(points, 1))
+    for i in 1:size(points)[1]
+        # get flux through plaquette centered at point
+        angles = Array{Float64}(undef, 4)
+        momenta = Array{Float64}(undef, length(angles))
+        states = Array{ComplexF64}(undef, length(angles), 3)
+        x0 = points[i, 1]
+        y0 = points[i, 2]
+        for j in 1:length(angles)
+            x_new = x0 + spacing * cos(2 * pi * (j - 1) / length(angles))
+            y_new = y0 + spacing * sin(2 * pi * (j - 1) / length(angles))
+            momentum = norm([x_new, y_new])
+            theta = polar_angle(x_new, y_new)
+            ham = H_mft(momentum, theta, delt, alph) + H_k(momentum, theta, vF)
+            if pure_pos == true
+                gs = [1 1 1]
+            else
+                gs = eigvecs(Hermitian(ham))[:, 1]
+            end
+            states[j, :] = normalize(gs)
+        end
+        P = 1
+        for j in 1:length(angles)
+            if j < length(angles)
+                temp = dot(states[j, :], states[j + 1, :])
+                P *= temp
+            else
+                temp = dot(states[j, :], states[1, :])
+                P *= temp
+            end
+            if temp != 0
+                P /= abs(temp)
+            end
+        end
+        P_list[i] = P
+        if abs(imag(P)) < 10^(-16)
+            berry_list[i] = -(angle(real(P))) / area(spacing, length(angles))
+        else
+            berry_list[i] = -angle(P) / area(spacing, length(angles))
+        end
+    end
+    return berry_list, P_list
+end
+function state_coefficients(p, theta, kappa, alpha, delta, index)
+    mat = H_mft(p, theta, delta, alpha)
+    gs = eigvecs(Hermitian(mat))[:, index]
+    return gs, eigvals((Hermitian(mat)))
+end

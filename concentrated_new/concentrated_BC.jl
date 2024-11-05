@@ -196,8 +196,8 @@ function bc_no_spinors(points, spacing, vF, kappa, delt, alph, pure_pos = false)
     end
     return berry_list, P_list
 end
-function state_coefficients(p, theta, kappa, alpha, delta, index)
-    mat = H_mft(p, theta, delta, alpha)
+function state_coefficients(p, theta, kappa, alpha, delta, index, vF)
+    mat = H_mft(p, theta, delta, alpha) + H_k(p, theta, vF)
     gs = eigvecs(Hermitian(mat))[:, index]
     return gs, eigvals((Hermitian(mat)))
 end

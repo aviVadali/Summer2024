@@ -23,11 +23,9 @@ function rot(pts, theta)
     return new_points
 end
 function chunk_space(x0, x1, n)
-    dist = (x1 - x0)
     return collect(range(x0, x1, n + 2)[2:n + 1])
 end
-function stump_triangle(center, rad, spacing)
-    x0, y0 = center
+function stump_triangle(rad, spacing)
     counter = 0
     limit = Int(trunc(rad/spacing))
     x_coords = []
@@ -35,14 +33,14 @@ function stump_triangle(center, rad, spacing)
     counter = 0
     for j in 1:limit - 1
         if j == 1
-            push!(x_coords, x0 + 0)
-            push!(y_coords, y0 - spacing * 2 * sin(2 * pi / 3))
+            push!(x_coords, 0)
+            push!(y_coords, -spacing * 2 * sin(2 * pi / 3))
             counter += 1
         else
-            x_pts = chunk_space(x0 + spacing * (j + 1) * cos(2 * pi / 3), x0 - spacing * (j + 1) * cos(2 * pi / 3), j)
+            x_pts = chunk_space(spacing * (j + 1) * cos(2 * pi / 3), -spacing * (j + 1) * cos(2 * pi / 3), j)
             for i in 1:j
                 push!(x_coords, x_pts[i])
-                push!(y_coords, y0 - spacing * (j + 1) * sin(2 * pi / 3))
+                push!(y_coords, -spacing * (j + 1) * sin(2 * pi / 3))
                 counter += 1
             end
         end
@@ -52,7 +50,7 @@ function stump_triangle(center, rad, spacing)
     points[:, 2] = y_coords
     return points
 end
-function hex_frame(center, rad, spacing)
+function hex_frame(rad, spacing)
     x_coords = []
     y_coords = []
     for j in -rad:spacing:rad
@@ -75,18 +73,18 @@ function hex_frame(center, rad, spacing)
     return points
 end
 function make_hex(center, rad, spacing)
-    frame = hex_frame(center, rad, spacing)
+    frame = hex_frame(rad, spacing)
     x_c = frame[:, 1]
     y_c = frame[:, 2]
     for j in 0:5
-        tri = stump_triangle(center, rad, spacing)
+        tri = stump_triangle(rad, spacing)
         rot_pts = rot(tri, j * pi / 3)
         append!(x_c, rot_pts[:, 1])
         append!(y_c, rot_pts[:, 2])
     end
     points = Array{Float64}(undef, size(x_c)[1], 2)
-    points[:, 1] = x_c
-    points[:, 2] = y_c
+    points[:, 1] = x_c .+ center[1] * ones(size(x_c)[1])
+    points[:, 2] = y_c .+ center[2] * ones(size(y_c)[1])
     return points
 end
 # plaquette area for sidelength s, N-gon

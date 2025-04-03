@@ -25,13 +25,13 @@ end
 function rmg_alpha_all(kappa, nu, Nl)
     omega = exp(im * 2 * pi / 3)
     denom = 10^(-16)
-    sum1 = 10^(-16)
-    sum2 = 10^(-16)
-    sum3 = 10^(-16)
-    sum4 = 10^(-16)
+    sum1 = 0
+    sum2 = 0
+    sum3 = 0
+    sum4 = 0
     for j in 0:(Nl - 1)
         denom += nu^(2*j) * kappa^(2*j)
-        sum1 += nu^(2*j) * kappa^(2*j) * omega^j
+        sum1 += nu^(2*j) * kappa^(2*j) * omega^j * j
         sum2 += nu^(2*j) * kappa^(2*j) * omega^j
         sum3 += nu^(2*j) * kappa^(2*j) * j
         sum4 += nu^(2*j) * kappa^(2*j)
@@ -40,7 +40,7 @@ function rmg_alpha_all(kappa, nu, Nl)
 end
 function limit_alpha_all(kappa, Nl)
     omega = exp(im * 2 * pi / 3)
-    return -1/kappa * (2 * omega^(Nl - 2) + (Nl - 1) * omega^(Nl - 1))
+    return (Nl - 1)/kappa * im * sqrt(3) * omega^(Nl - 1)
 end
 function rmg_delta_layers(kappa, nu, Nl, layers)
     omega = exp(im * 2 * pi / 3)
@@ -74,7 +74,7 @@ function rmg_alpha_layers(kappa, nu, Nl, layers)
     end
     for j in eachindex(layers)
         l = layers[j] - 1
-        sum1 += nu^(2*l) * kappa^(2*l) * omega^l
+        sum1 += nu^(2*l) * kappa^(2*l) * omega^l * l
         sum2 += nu^(2*l) * kappa^(2*l) * omega^l
     end
     return (-1/kappa) * (2 * conj(omega) * sum1 + sum2 * sum3 / sum4) / denom
@@ -82,7 +82,7 @@ end
 function limit_alpha_l(kappa, nu, Nl, l)
     m = l[1]
     omega = exp(im * 2 * pi / 3)
-    return -1/kappa * (nu * kappa)^(2 * (m - Nl)) * (2 * omega^(m - 2) + (Nl - 1) * omega^(m - 1))
+    return -1/kappa * (nu * kappa)^(2 * (m - Nl)) * (2 * (m - 1) * omega^(m - 2) + (Nl - 1) * omega^(m - 1))
 end
 
 function rmg_gauge_transform(alpha, delta, kappa, C)

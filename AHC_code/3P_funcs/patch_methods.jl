@@ -100,7 +100,7 @@ function bc_no_spinors(points, spacing, vF, delt, alph)
             theta = polar_angle(x_new, y_new)
             ham = H_mft(momentum, theta, delt, alph) + H_k(momentum, theta, vF)
             gs = eigvecs(Hermitian(ham))[:, 1]
-            states[j, :] = normalize(gs)
+            states[j, :] = gauge_fix(normalize(gs))
         end
         P = 1
         for j in 1:num_vertices
@@ -116,154 +116,189 @@ function bc_no_spinors(points, spacing, vF, delt, alph)
             end
         end
         if abs(imag(P)) < 10^(-16)
-            berry_list[i] = -(angle(real(P))) / area(spacing, num_vertices)
+            berry_list[i] = -(angle(real(P))) / (area(spacing / sqrt(2), num_vertices))
         else
-            berry_list[i] = -angle(P) / area(spacing, num_vertices)
+            berry_list[i] = -angle(P) / area(spacing / sqrt(2), num_vertices)
         end
     end
     return berry_list
 end
 
-# coefficients for \alpha with a small real component (obtained via 1st order perturbation theory)
-function approx_lil_re_alpha(q, theta, delta, alpha, lambda)
-    # term1 = (18 * sqrt(3) * delta^4)
-    # term2 = -12 * q * alpha * delta^3 * (sqrt(3) * lambda * cos(theta) + 3im * sin(theta))
-    # term3 = 2 * q^3 * alpha^3 * delta * (sqrt(3) * lambda * (3 * cos(theta) + 4 * cos(3*theta)) + 18im * sin(theta))
-    # term4 = -6 * q^2 * alpha^2 * delta^2 * (sqrt(3) + 4im * lambda * sin(2*theta))
-    # term5 = q^4 * alpha^4 * (11 * sqrt(3) + 2im * lambda * (19 * sin(2*theta) - 5 * sin(4*theta)))
-    # C1 = (1 / (54 * delta^4)) * (term1 + term2 + term3 + term4 + term5)
-
-    # term1 = 18 * sqrt(3) * delta^4
-    # term2 = 6 * q * alpha * delta^3 * (sqrt(3) * (3im + lambda) * cos(theta) - 3 * (-im + lambda) * sin(theta))
-    # term3 = q^3 * alpha^3 * delta * (
-    #     -3 * sqrt(3) * (6im + lambda) * cos(theta) +
-    #     8 * sqrt(3) * lambda * cos(3*theta) +
-    #     9 * (-2im + lambda) * sin(theta))
-    # term4 = 6 * q^2 * alpha^2 * delta^2 * (
-    #     -sqrt(3) - 2im * sqrt(3) * lambda * cos(2*theta) + 2im * lambda * sin(2*theta))
-    # term5 = q^4 * alpha^4 * (
-    #     11 * sqrt(3) +
-    #     im * lambda * (19 * sqrt(3) * cos(2*theta) + 5 * sqrt(3) * cos(4*theta) - 
-    #         19 * sin(2*theta) + 5 * sin(4*theta)))
-    # C3 = (1 / (54 * delta^4)) * (term1 + term2 + term3 + term4 + term5)
-
-    # term1 = 18 * sqrt(3) * delta^4
-    # term2 = 6 * q * alpha * delta^3 * (
-    #     sqrt(3) * (-3im + lambda) * cos(theta) + 3 * (im + lambda) * sin(theta))
-    # term3 = q^3 * alpha^3 * delta * (-3 * sqrt(3) * (-6im + lambda) * cos(theta) +
-    #     8 * sqrt(3) * lambda * cos(3*theta) -9 * (2im + lambda) * sin(theta))
-    # term4 = 6im * q^2 * alpha^2 * delta^2 * (
-    #     im * sqrt(3) + 2 * lambda * (sqrt(3) * cos(2*theta) + sin(2*theta)))
-    # term5 = q^4 * alpha^4 * (11 * sqrt(3) - im * lambda * (
-    #         19 * sqrt(3) * cos(2*theta) + 5 * sqrt(3) * cos(4*theta) +
-    #         19 * sin(2*theta) - 5 * sin(4*theta)))
-    # C5 = (1 / (54 * delta^4)) * (term1 + term2 + term3 + term4 + term5)
-
-    # return normalize([C1, C3, C5])
-
-    term1_num = q^2 * alpha^2 * (4 * q * alpha + sqrt(16 * q^2 * alpha^2 + 6 * delta^2)) * lambda * cos(theta) * 
-                (-1 + 2 * cos(2 * theta)) * (-4 * sqrt(3) * q * alpha - sqrt(2) * (3 * delta + 
-                sqrt(24 * q^2 * alpha^2 + 9 * delta^2)) + 2im * (2 * sqrt(6) * q * alpha - 3 * delta + 
-                sqrt(24 * q^2 * alpha^2 + 9 * delta^2)) * sin(theta))
-    
-    term1_denom = 3 * sqrt(6) * sqrt(2 * q^2 * alpha^2 + 3 * delta^2) * 
-                  (3 * delta^2 + 2 * q * alpha * (4 * q * alpha + sqrt(16 * q^2 * alpha^2 + 6 * delta^2)))^(3/2)
-    
-    term2 = (4 * sqrt(3) * q * alpha - 3 * sqrt(2) * delta + sqrt(6) * sqrt(8 * q^2 * alpha^2 + 3 * delta^2) + 
-             2im * (2 * sqrt(6) * q * alpha + 3 * delta + sqrt(24 * q^2 * alpha^2 + 9 * delta^2)) * sin(theta)) / 
-            (6 * sqrt(6 * delta^2 + 4 * q * alpha * (4 * q * alpha + sqrt(16 * q^2 * alpha^2 + 6 * delta^2))))
-    
-    term3_num = 2 * q * alpha * lambda * cos(theta) * (-2 * sqrt(6) * q * alpha + 3 * delta - sqrt(24 * q^2 * alpha^2 + 9 * delta^2) + 
-                1im * (4 * sqrt(3) * q * alpha + 3 * sqrt(2) * delta + sqrt(6) * sqrt(8 * q^2 * alpha^2 + 3 * delta^2)) * sin(3 * theta))
-    
-    term3_denom = 3 * (3 * delta - sqrt(6 * q^2 * alpha^2 + 9 * delta^2)) * 
-                  sqrt(3 * delta^2 + 2 * q * alpha * (4 * q * alpha + sqrt(16 * q^2 * alpha^2 + 6 * delta^2)))
-    
-    term1 = term1_num / term1_denom
-    term3 = term3_num / term3_denom
-    C1 = term1 + term2 + term3
-
-    term1_num = -im * q^2 * alpha^2 * (4 * q * alpha + sqrt(16 * q^2 * alpha^2 + 6 * delta^2)) * lambda * cos(theta) * 
-                (-1 + 2 * cos(2 * theta)) * (-im * (4 * q * alpha + sqrt(6) * delta + sqrt(16 * q^2 * alpha^2 + 6 * delta^2)) + 
-                (2 * sqrt(6) * q * alpha - 3 * delta + sqrt(24 * q^2 * alpha^2 + 9 * delta^2)) * cos(theta) + 
-                (2 * sqrt(2) * q * alpha - sqrt(3) * delta + sqrt(8 * q^2 * alpha^2 + 3 * delta^2)) * sin(theta))
-    
-    # Term 1 denominator
-    term1_denom = 3 * sqrt(4 * q^2 * alpha^2 + 6 * delta^2) * 
-                  (3 * delta^2 + 2 * q * alpha * (4 * q * alpha + sqrt(16 * q^2 * alpha^2 + 6 * delta^2)))^(3/2)
-    
-    term1 = term1_num / term1_denom
-    
-    # Term 2
-    term2 = sqrt(2) * (1/6 * (sqrt(6) * q * alpha + sqrt(6 * q^2 * alpha^2 + (9 * delta^2) / 4)) * 
-                       (sqrt(6) - 3im * cos(theta) - im * sqrt(3) * sin(theta)) - 
-                       1/4 * delta * (sqrt(6) + 3im * cos(theta) + im * sqrt(3) * sin(theta))) / 
-            sqrt(9 * delta^2 + 6 * q * alpha * (4 * q * alpha + sqrt(16 * q^2 * alpha^2 + 6 * delta^2)))
-    
-    # Term 3 numerator
-    term3_num = q * alpha * lambda * (cos(theta) - sqrt(3) * sin(theta)) * 
-                (4 * sqrt(3) * q * alpha - 3 * sqrt(2) * delta + sqrt(6) * sqrt(8 * q^2 * alpha^2 + 3 * delta^2) - 
-                2im * (2 * sqrt(6) * q * alpha + 3 * delta + sqrt(24 * q^2 * alpha^2 + 9 * delta^2)) * sin(3 * theta))
-    
-    # Term 3 denominator
-    term3_denom = 3 * (3 * delta - sqrt(6 * q^2 * alpha^2 + 9 * delta^2)) * 
-                  sqrt(6 * delta^2 + 4 * q * alpha * (4 * q * alpha + sqrt(16 * q^2 * alpha^2 + 6 * delta^2)))
-    
-    term3 = term3_num / term3_denom
-    C3 = term1 + term2 + term3
-
-    # Term 1 numerator
-    term1_num = im * q^2 * alpha^2 * (4 * q * alpha + sqrt(16 * q^2 * alpha^2 + 6 * delta^2)) * lambda * cos(theta) * 
-                (-1 + 2 * cos(2 * theta)) * (im * (4 * q * alpha + sqrt(6) * delta + sqrt(16 * q^2 * alpha^2 + 6 * delta^2)) + 
-                (2 * sqrt(6) * q * alpha - 3 * delta + sqrt(24 * q^2 * alpha^2 + 9 * delta^2)) * cos(theta) - 
-                (2 * sqrt(2) * q * alpha - sqrt(3) * delta + sqrt(8 * q^2 * alpha^2 + 3 * delta^2)) * sin(theta))
-    
-    # Term 1 denominator
-    term1_denom = 3 * sqrt(4 * q^2 * alpha^2 + 6 * delta^2) * 
-                  (3 * delta^2 + 2 * q * alpha * (4 * q * alpha + sqrt(16 * q^2 * alpha^2 + 6 * delta^2)))^(3/2)
-    
-    term1 = term1_num / term1_denom
-    
-    # Term 2
-    term2 = sqrt(2) * (1/6 * (sqrt(6) * q * alpha + sqrt(6 * q^2 * alpha^2 + (9 * delta^2) / 4)) * 
-                       (sqrt(6) + 3im * cos(theta) - im * sqrt(3) * sin(theta)) - 
-                       1/4 * delta * (sqrt(6) - 3im * cos(theta) + im * sqrt(3) * sin(theta))) / 
-            sqrt(9 * delta^2 + 6 * q * alpha * (4 * q * alpha + sqrt(16 * q^2 * alpha^2 + 6 * delta^2)))
-    
-    # Term 3 numerator
-    term3_num = q * alpha * lambda * (cos(theta) + sqrt(3) * sin(theta)) * 
-                (4 * sqrt(3) * q * alpha - 3 * sqrt(2) * delta + sqrt(6) * sqrt(8 * q^2 * alpha^2 + 3 * delta^2) - 
-                2im * (2 * sqrt(6) * q * alpha + 3 * delta + sqrt(24 * q^2 * alpha^2 + 9 * delta^2)) * sin(3 * theta))
-    
-    # Term 3 denominator
-    term3_denom = 3 * (3 * delta - sqrt(6 * q^2 * alpha^2 + 9 * delta^2)) * 
-                  sqrt(6 * delta^2 + 4 * q * alpha * (4 * q * alpha + sqrt(16 * q^2 * alpha^2 + 6 * delta^2)))
-    
-    term3 = term3_num / term3_denom
-    C5 = term1 + term2 + term3
-
-    return normalize([C1, C3, C5])
+function analytic_eigenvalues(alpha, delta, x, y)
+    B = 6 * alpha * conj(alpha) * (x^2 + y^2) + 3 * delta * conj(delta)
+    C = 4 * real(alpha^3) * x^3 - 6 * real(alpha^2 * delta) * x^2 - 6 * real(alpha^2 * delta) * y^2 - 
+    12 * real(alpha^3) * x * y^2 + 2 * real(delta^3)
+    epsilons = Array{Float64}(undef, 3)
+    epsilons[3] = real(2 * sqrt(B/3) * cos(1/3 * acos(3*C / (2 * B) * sqrt(3/B)) - 0*2 * pi/3))
+    epsilons[2] = real(2 * sqrt(B/3) * cos(1/3 * acos(3*C / (2 * B) * sqrt(3/B)) - 1*2 * pi/3))
+    epsilons[1] = real(2 * sqrt(B/3) * cos(1/3 * acos(3*C / (2 * B) * sqrt(3/B)) - 2*2 * pi/3))
+    return epsilons
+end
+function analytic_eigenvectors(epsilon, alpha, delta, x, y)
+    # convenience
+    q = x + im*y
+    omega = exp(im * 2 * pi/ 3)
+    # variables
+    f1 = delta + alpha * (q + conj(q))
+    f3 = delta + alpha * (omega * q + conj(omega * q))
+    f5 = delta + alpha * (conj(omega) * q + omega * conj(q))
+    # normalization
+    nmz = (epsilon^6 + epsilon^4 * (abs2(f3) - 2 * abs2(f1) - 2 * abs2(f5)) - 2 * epsilon^3 * real(f1 * f3 * f5) + 
+    epsilon^2 * (abs2(f1)^2 + abs2(f5)^2 + 2 * abs2(f1) * abs2(f5) - 2 * abs2(f1) * abs2(f3) + abs2(f3) * abs2(f5)) + 
+    2 * epsilon * real(f1 * f3 * f5) * (abs2(f1) + abs2(f3) + abs2(f5)) + abs2(f1) * abs2(f3) * (abs2(f1) + abs2(f3) + abs2(f5)))
+    # eigenvector entries
+    A1 = abs(f3) * (epsilon^2 - abs2(f1))
+    A3 = conj(f3)/abs(f3) * (epsilon * (epsilon^2 - abs2(f1)) - conj(f5) * (epsilon * f5 + conj(f1) * conj(f3)))
+    A5 = abs(f3) * (epsilon * f5 + conj(f1) * conj(f3))
+    return 1/sqrt(nmz) * [A1, A3, A5]
 end
 
-function analytic_origin_3p(alpha, delta)
-    omega = exp(im * 2 * pi / 3)
-    epsilon = 2 * real(delta)
-    if 2 * real(omega * delta) < epsilon
-        epsilon = 2 * real(omega * delta)
-    end
-    if 2 * real(conj(omega) * delta) < epsilon
-        epsilon = 2 * real(conj(omega) * delta)
-    end
-    A1y = 1/(epsilon^2 + 2 * epsilon * real(delta) + real(delta)^2 - 3 * imag(delta)^2) * 
-    (-1im) * (imag(delta) * real(alpha) + real(delta) * imag(alpha) + imag(alpha) * epsilon)
-    A1x = 1/(epsilon + real(delta)) * (-im * sqrt(3) * imag(delta) * A1y - 1/sqrt(3) * real(alpha))
-    A3x = -1/2 * A1x - sqrt(3)/2 * A1y
-    A3y = sqrt(3)/2 * A1x - 1/2 * A1y
-    A5x = -1/2 * A1x + sqrt(3)/2 * A1y
-    A5y = -sqrt(3)/2 * A1x - 1/2 * A1y
-    bc = -2 * (imag(conj(A1x) * A1y) + imag(conj(A3x) * A3y) + imag(conj(A5x) * A5y))
-    return bc
+# At the origin
+function analytic_d_A1(delta, alpha, index)
+    omega = exp(im * 2 * pi/ 3)
+    k = index - 2
+    nmz = (64 * real(omega^k * delta)^6 - 48 * abs2(delta) * real(omega^k * delta)^4 - 16 * real(delta^3) * real(omega^k * delta)^3 + 
+    12 * abs2(delta)^2 * real(omega^k * delta)^2 + 12 * abs2(delta) * real(delta^3) * real(omega^k * delta) + 3 * abs2(delta)^3)
+
+    dx_A1 = 1/sqrt(nmz) * (-abs(delta)/(2 * nmz) * (-96 * real(omega^k * delta)^4 * real(alpha * conj(delta)) + 
+    6 * abs2(delta)^2 * real(alpha * conj(delta))) * (4 * real(omega^k * delta)^2 - abs2(delta)) - 
+    4 * abs(delta) * real(alpha * conj(delta)) - 
+    real(alpha * conj(delta)) / abs(delta) * (4 * real(omega^k * delta)^2 - abs2(delta)))
+
+    dy_A1 = 1/sqrt(nmz) * (-abs(delta)/(2 * nmz) * (-96*sqrt(3) * real(omega^k * delta)^4 * real(alpha * conj(delta)) + 
+    48*sqrt(3) * abs2(delta) * real(omega^k * delta)^2 * real(alpha * conj(delta)) - 
+    6*sqrt(3) * abs2(delta)^2 * real(alpha * conj(delta))) * (4 * real(omega^k * delta)^2 - abs2(delta)) - 
+    sqrt(3)/abs(delta) * real(alpha * conj(delta)) * (4 * real(omega^k * delta)^2 - abs2(delta)))
+    
+    return dx_A1, dy_A1
 end
+
+# At the origin
+function analytic_d_A3(delta, alpha, index)
+    omega = exp(im * 2 * pi/ 3)
+    k = index - 2
+
+    nmz = (64 * real(omega^k * delta)^6 - 48 * abs2(delta) * real(omega^k * delta)^4 - 16 * real(delta^3) * real(omega^k * delta)^3 + 
+    12 * abs2(delta)^2 * real(omega^k * delta)^2 + 12 * abs2(delta) * real(delta^3) * real(omega^k * delta) + 3 * abs2(delta)^3)
+    
+    dx_A3 = 1/sqrt(nmz) * (-conj(delta)/(2 * nmz * abs(delta)) * (-96 * real(omega^k * delta)^4 * real(alpha * conj(delta)) + 
+    6 * abs2(delta)^2 * real(alpha * conj(delta))) * (8 * real(omega^k * delta)^3 - 4 * abs2(delta) * real(omega^k * delta) - conj(delta)^3) +
+    (conj(delta)/abs(delta)^3 * real(alpha * conj(delta)) - conj(alpha)/abs(delta)) * 
+    (8 * real(omega^k * delta)^3 - 4 * abs2(delta) * real(omega^k * delta) - conj(delta)^3) - 
+    4 * conj(delta) / abs(delta) * real(omega^k * delta) * real(alpha * conj(delta)))
+
+    dy_A3 = 1/sqrt(nmz) * (-conj(delta)/(2 * nmz * abs(delta)) * (-96 * sqrt(3) * real(omega^k * delta)^4 * real(conj(delta) * alpha) + 
+    48 * sqrt(3) * abs2(delta) * real(omega^k * delta)^2 * real(conj(delta) * alpha) - 
+    6 * sqrt(3) * abs2(delta)^2 * real(conj(delta) * alpha)) * (8 * real(omega^k * delta)^3 - 4 * abs2(delta) * real(omega^k * delta) - 
+    conj(delta)^3) + (sqrt(3) * conj(delta) / abs(delta)^3 * real(conj(delta) * alpha) - conj(alpha) * sqrt(3) / abs(delta)) * 
+    (8 * real(omega^k * delta)^3 - 4 * abs2(delta) * real(omega^k * delta) - conj(delta)^3) - 
+    4 * sqrt(3) * conj(delta) / abs(delta) * real(omega^k * delta) * real(conj(delta) * alpha))
+    
+    return dx_A3, dy_A3
+end
+
+# At the origin
+function analytic_d_A5(delta, alpha, index)
+    omega = exp(im * 2 * pi/ 3)
+    k = index - 2
+
+    nmz = (64 * real(omega^k * delta)^6 - 48 * abs2(delta) * real(omega^k * delta)^4 - 16 * real(delta^3) * real(omega^k * delta)^3 + 
+    12 * abs2(delta)^2 * real(omega^k * delta)^2 + 12 * abs2(delta) * real(delta^3) * real(omega^k * delta) + 3 * abs2(delta)^3)
+
+
+    dx_A5 = 1/sqrt(nmz) * (-abs(delta)/(2 * nmz) * (-96 * real(omega^k * delta)^4 * real(conj(delta) * alpha) + 
+    6 * abs2(delta)^2 * real(conj(delta) * alpha)) * (2 * delta * real(omega^k * delta) + conj(delta)^2) - 
+    1/abs(delta) * real(conj(delta) * alpha) * (2 * delta * real(omega^k * delta) + conj(delta)^2) + 
+    abs(delta) * (conj(alpha) * conj(delta) - 2 * alpha * real(omega^k * delta)))
+
+    dy_A5 = 1/sqrt(nmz) * (-abs(delta)/(2 * nmz) * (-96 * sqrt(3) * real(omega^k * delta)^4 * real(conj(delta) * alpha) + 
+    48 * sqrt(3) * abs2(delta) * real(omega^k * delta)^2 * real(conj(delta) * alpha) - 
+    6 * sqrt(3) * abs2(delta)^2 * real(conj(delta) * alpha)) * (2 * delta * real(omega^k * delta) + conj(delta)^2) - 
+    sqrt(3)/abs(delta) * real(conj(delta) * alpha) * (2 * delta * real(omega^k * delta) + conj(delta)^2) + 
+    abs(delta) * (2 * sqrt(3) * alpha * real(omega^k * delta) - sqrt(3) * conj(alpha) * conj(delta)))
+    
+    return dx_A5, dy_A5
+end
+
+function analytic_og_bc(delta, alpha, index)
+    dxA1, dyA1 = analytic_d_A1(delta, alpha, index)
+    dxA3, dyA3 = analytic_d_A3(delta, alpha, index)
+    dxA5, dyA5 = analytic_d_A5(delta, alpha, index)
+    return -2 * imag(conj(dxA1) * dyA1) - 2 * imag(conj(dxA3) * dyA3) - 2 * imag(conj(dxA5) * dyA5)
+end
+
+function explicit_og_bc(delta, alpha, index)
+    k = index - 2
+    if mod(k, 3) == 0
+        return -8/(sqrt(3) * (delta^2 + conj(delta)^2 + abs(delta)^2)^2) * (imag(alpha) * imag(delta) + real(alpha) * real(delta)) * 
+        (3 * imag(alpha) * real(delta) + imag(delta) * real(alpha))
+    elseif mod(k, 3) == 1
+        return (2/3) * (real(alpha)^2 / imag(delta)^2 + (-3 * imag(alpha)^2 + 2*sqrt(3) * imag(alpha) * real(alpha) - real(alpha)^2) / 
+        (imag(delta) + sqrt(3) * real(delta))^2)
+    elseif mod(k, 3) == 2
+        return 2*(imag(alpha) * imag(delta) + real(alpha) * real(delta))/(3 * imag(delta)^2 * (imag(delta) - sqrt(3) * real(delta))^3) * 
+        (3 * imag(alpha) * imag(delta)^2 - 3 * sqrt(3) * imag(delta) * (imag(alpha) + sqrt(3) * real(alpha)) * real(delta) + 
+        sqrt(3) * (2 * imag(delta)^2 + 3 * real(delta)^2) * real(alpha))
+    end
+end
+
+function bc_no_spinors_analytic(points, spacing, delt, alph, index)
+    berry_list = Array{Float64}(undef, size(points)[1])
+    for i in 1:size(points)[1]
+        # get flux through plaquette centered at point
+        num_vertices = 4
+        states = Array{ComplexF64}(undef, num_vertices, 3)
+        x0 = points[i, 1]
+        y0 = points[i, 2]
+        for j in 1:num_vertices
+            x_new = x0 + spacing * cos(2 * pi * (j - 1) / num_vertices)
+            y_new = y0 + spacing * sin(2 * pi * (j - 1) / num_vertices)
+            val = analytic_eigenvalues(alph, delt, x_new, y_new)[index]
+            states[j, :] = analytic_eigenvectors(val, alph, delt, x_new, y_new)
+        end
+        P = 1
+        for j in 1:num_vertices
+            if j < num_vertices
+                temp = dot(states[j, :], states[j + 1, :])
+                P *= temp
+            else
+                temp = dot(states[j, :], states[1, :])
+                P *= temp
+            end
+            if temp != 0
+                P /= abs(temp)
+            end
+        end
+        if abs(imag(P)) < 10^(-16)
+            berry_list[i] = -(angle(real(P))) / area(spacing / sqrt(2), num_vertices)
+        else
+            berry_list[i] = -angle(P) / area(spacing / sqrt(2), num_vertices)
+        end
+    end
+    return berry_list
+end
+
+
+
+# function analytic_origin_3p(alpha, delta)
+#     omega = exp(im * 2 * pi / 3)
+#     epsilon = 2 * real(delta)
+#     if 2 * real(omega * delta) < epsilon
+#         epsilon = 2 * real(omega * delta)
+#     end
+#     if 2 * real(conj(omega) * delta) < epsilon
+#         epsilon = 2 * real(conj(omega) * delta)
+#     end
+#     A1y = 1/(epsilon^2 + 2 * epsilon * real(delta) + real(delta)^2 - 3 * imag(delta)^2) * 
+#     (-1im) * (imag(delta) * real(alpha) + real(delta) * imag(alpha) + imag(alpha) * epsilon)
+#     A1x = 1/(epsilon + real(delta)) * (-im * sqrt(3) * imag(delta) * A1y - 1/sqrt(3) * real(alpha))
+#     A3x = -1/2 * A1x - sqrt(3)/2 * A1y
+#     A3y = sqrt(3)/2 * A1x - 1/2 * A1y
+#     A5x = -1/2 * A1x + sqrt(3)/2 * A1y
+#     A5y = -sqrt(3)/2 * A1x - 1/2 * A1y
+#     bc = -2 * (imag(conj(A1x) * A1y) + imag(conj(A3x) * A3y) + imag(conj(A5x) * A5y))
+#     return bc
+# end
 
 function g_mu_nu(delta_k, psi_1, psi_2, psi_3)
     gf_psi_1 = gauge_fix(psi_1)

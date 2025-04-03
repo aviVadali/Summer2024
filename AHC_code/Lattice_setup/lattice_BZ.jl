@@ -89,5 +89,47 @@ function make_hex(center, rad, spacing)
 end
 # plaquette area for sidelength s, N-gon
 function area(s, N)
-    return (1/2) * N * s^2 * sin(2 * pi / N)
+    return (1/4) * N * s^2 * cot(pi/N)
+end
+
+function make_circle(kappa, spacing)
+    x_coords = []
+    y_coords = []
+    num_rings = floor(Int, kappa / spacing)
+    for i in 0:num_rings
+        r = i * spacing
+        num_points = max(1, floor(Int, 2*pi * r / spacing))
+        for j in 0:num_points-1
+            theta = j * (2*pi / num_points)
+            push!(x_coords, r * cos(theta))
+            push!(y_coords, r * sin(theta))
+        end
+    end
+    points = Array{Float64}(undef, size(x_coords, 1), 2)
+    points[:, 1] = x_coords
+    points[:, 2] = y_coords
+    return points
+end
+
+function make_sector(r_min, r_max, spacing, theta_min, theta_max)
+    x_coords = []
+    y_coords = []
+    num_rings = floor(Int, (r_max - r_min) / spacing)
+    println(num_rings)
+    
+    for i in 0:num_rings
+        r = i * spacing + r_min
+        num_points = max(1, floor(Int, (theta_max - theta_min) * r / spacing))
+        for j in 0:num_points-1
+            theta = theta_min + j * ((theta_max - theta_min) / num_points)
+            push!(x_coords, r * cos(theta))
+            push!(y_coords, r * sin(theta))
+        end
+    end
+    
+    points = Array{Float64}(undef, length(x_coords), 2)
+    points[:, 1] = x_coords
+    points[:, 2] = y_coords
+    
+    return points
 end

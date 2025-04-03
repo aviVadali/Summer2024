@@ -1,9 +1,7 @@
 function rmg_spinor(Nl, nu, k)
     vec = Array{ComplexF64}(undef, Nl)
     for i in 1:Nl
-        theta = polar_angle(k[1], k[2])
-        q = norm(k)
-        vec[i] = nu^(i - 1) * q^(i - 1) * exp(im * theta * (i - 1))
+        vec[i] = nu^(i - 1) * (k[1] + im * k[2])^(i - 1)
     end
     return vec
 end
@@ -35,9 +33,9 @@ function rmg_spinor_bc(points, spacing, Nl, nu)
             end
         end
         if abs(imag(P)) < 10^(-16)
-            berry_list[i] = -(angle(real(P))) / area(spacing, num_vertices)
+            berry_list[i] = -(angle(real(P))) / area(spacing / sqrt(2), num_vertices)
         else
-            berry_list[i] = -angle(P) / area(spacing, num_vertices)
+            berry_list[i] = -angle(P) / area(spacing / sqrt(2), num_vertices)
         end
     end
     return berry_list
@@ -77,9 +75,9 @@ function rmg_patch_bc(points, spacing, Nl, nu, m_kappa, vF, delt, alph)
             end
         end
         if abs(imag(P)) < 10^(-16)
-            berry_list[i] = -(angle(real(P))) / area(spacing, num_vertices)
+            berry_list[i] = -(angle(real(P))) / area(spacing / sqrt(2), num_vertices)
         else
-            berry_list[i] = -angle(P) / area(spacing, num_vertices)
+            berry_list[i] = -angle(P) / area(spacing / sqrt(2), num_vertices)
         end
     end
     return berry_list

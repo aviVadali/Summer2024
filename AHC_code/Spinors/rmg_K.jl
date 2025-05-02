@@ -33,9 +33,9 @@ function rmg_spinor_bc(points, spacing, Nl, nu)
             end
         end
         if abs(imag(P)) < 10^(-16)
-            berry_list[i] = -(angle(real(P))) / area(spacing / sqrt(2), num_vertices)
+            berry_list[i] = -(angle(real(P))) / area(spacing * sqrt(2), num_vertices)
         else
-            berry_list[i] = -angle(P) / area(spacing / sqrt(2), num_vertices)
+            berry_list[i] = -angle(P) / area(spacing * sqrt(2), num_vertices)
         end
     end
     return berry_list
@@ -75,9 +75,9 @@ function rmg_patch_bc(points, spacing, Nl, nu, m_kappa, vF, delt, alph)
             end
         end
         if abs(imag(P)) < 10^(-16)
-            berry_list[i] = -(angle(real(P))) / area(spacing / sqrt(2), num_vertices)
+            berry_list[i] = -(angle(real(P))) / area(spacing * sqrt(2), num_vertices)
         else
-            berry_list[i] = -angle(P) / area(spacing / sqrt(2), num_vertices)
+            berry_list[i] = -angle(P) / area(spacing * sqrt(2), num_vertices)
         end
     end
     return berry_list

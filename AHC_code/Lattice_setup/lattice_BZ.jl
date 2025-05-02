@@ -98,7 +98,7 @@ function make_circle(kappa, spacing)
     num_rings = floor(Int, kappa / spacing)
     for i in 0:num_rings
         r = i * spacing
-        num_points = max(1, floor(Int, 2*pi * r / spacing))
+        num_points = max(1, floor(Int, 2 * pi * i))
         for j in 0:num_points-1
             theta = j * (2*pi / num_points)
             push!(x_coords, r * cos(theta))

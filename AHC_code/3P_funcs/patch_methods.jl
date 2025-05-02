@@ -19,6 +19,13 @@ function H_k(q, theta, vF)
     return [dot(k, n1) 0 0; 0 dot(k, n3) 0; 0 0 dot(k, n5)]
 end
 
+function H_k_v2(k_m, vF)
+    n1 = [cos(0), sin(0)]
+    n3 = [cos(2 * pi / 3), sin(2 * pi / 3)]
+    n5 = [cos(4 * pi / 3), sin(4 * pi / 3)]
+    k = vF * k_m
+    return [dot(k, n1) 0 0; 0 dot(k, n3) 0; 0 0 dot(k, n5)]
+end
 function H_mft(q, theta, delt, alph)
     # useful phase
     omega = exp(2*pi/3 * im)
@@ -116,9 +123,9 @@ function bc_no_spinors(points, spacing, vF, delt, alph)
             end
         end
         if abs(imag(P)) < 10^(-16)
-            berry_list[i] = -(angle(real(P))) / (area(spacing / sqrt(2), num_vertices))
+            berry_list[i] = -(angle(real(P))) / (area(spacing * sqrt(2), num_vertices))
         else
-            berry_list[i] = -angle(P) / area(spacing / sqrt(2), num_vertices)
+            berry_list[i] = -angle(P) / area(spacing * sqrt(2), num_vertices)
         end
     end
     return berry_list
@@ -134,6 +141,19 @@ function analytic_eigenvalues(alpha, delta, x, y)
     epsilons[1] = real(2 * sqrt(B/3) * cos(1/3 * acos(3*C / (2 * B) * sqrt(3/B)) - 2*2 * pi/3))
     return epsilons
 end
+
+function vF_analytic_eigenvalues(alpha, delta, x, y, vF)
+    v = vF
+    B = 3 * (x^2 + y^2) * (v^2 + 2 * abs2(alpha)) + 3 * abs2(delta)
+    C = (2 * x * (v^3 - 3 * v * abs2(alpha) + 2 * real(alpha^3)) * (x^2 - 3 * y^2) - 
+    6 * (x^2 + y^2) * real(delta * alpha^2 + 2 * v * alpha * conj(delta)) + 2 * real(delta^3))
+    epsilons = Array{Float64}(undef, 3)
+    epsilons[3] = real(2 * sqrt(B/3) * cos(1/3 * acos(3*C / (2 * B) * sqrt(3/B)) - 0*2 * pi/3))
+    epsilons[2] = real(2 * sqrt(B/3) * cos(1/3 * acos(3*C / (2 * B) * sqrt(3/B)) - 1*2 * pi/3))
+    epsilons[1] = real(2 * sqrt(B/3) * cos(1/3 * acos(3*C / (2 * B) * sqrt(3/B)) - 2*2 * pi/3))
+    return epsilons
+end
+
 function analytic_eigenvectors(epsilon, alpha, delta, x, y)
     # convenience
     q = x + im*y
@@ -150,6 +170,27 @@ function analytic_eigenvectors(epsilon, alpha, delta, x, y)
     A1 = abs(f3) * (epsilon^2 - abs2(f1))
     A3 = conj(f3)/abs(f3) * (epsilon * (epsilon^2 - abs2(f1)) - conj(f5) * (epsilon * f5 + conj(f1) * conj(f3)))
     A5 = abs(f3) * (epsilon * f5 + conj(f1) * conj(f3))
+    return 1/sqrt(nmz) * [A1, A3, A5]
+end
+
+function vF_analytic_eigenvectors(epsilon, alpha, delta, x, y, vF)
+    v = vF/2
+    q = x + im * y
+    omega = exp(im * 2 * pi/ 3)
+    # variables
+    f1 = delta + alpha * (q + conj(q))
+    v1 = v * (q + conj(q))
+    f3 = delta + alpha * (omega * q + conj(omega * q))
+    v3 = v * (omega * q + conj(omega * q))
+    f5 = delta + alpha * (conj(omega) * q + omega * conj(q))
+    v5 = v * (conj(omega) * q + omega * conj(q))
+    # normalization
+    nmz = (((epsilon - v5) * (epsilon - v3) - abs2(f1))^2 + abs2(f1) * (abs2(f3) + abs2(f5)) + 
+    2 * real(f1 * f3 * f5) * (2 * epsilon - v3 - v5) + abs2(f3) * (epsilon - v3)^2 + abs2(f5) * (epsilon - v5)^2)
+    # eigenvector entries
+    A1 = (epsilon - v5) * (epsilon - v3) - abs2(f1)
+    A3 = conj(f3) * (epsilon - v3) + f1 * f5
+    A5 = f5 * (epsilon - v5) + conj(f1) * conj(f3)
     return 1/sqrt(nmz) * [A1, A3, A5]
 end
 

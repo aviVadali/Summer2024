@@ -103,3 +103,78 @@ function bc_sign_alpha_delta(m_kappa, spacing, Nl, nu, alpha, delta, q)
         return false
     end
 end
+
+function rmg_delta_linear_layer(kappa, nu, Nl, layer)
+    omega = exp(im * 2 * pi / 3)
+    nmz = 10^(-16)
+    num = 10^(-16)
+    for j in 0:(Nl - 1)
+        nmz += nu^(2*j) * kappa^(2*j)
+    end
+    l = layer - 1
+    num = -(l + 1) * nu^(2*l) * kappa^(2*l) * omega^l
+    return num / nmz
+end
+
+function rmg_alpha_linear_layer(kappa, nu, Nl, layer)
+    omega = exp(im * 2 * pi / 3)
+    denom = 10^(-16)
+    sum1 = 10^(-16)
+    sum2 = 10^(-16)
+    sum3 = 10^(-16)
+    sum4 = 10^(-16)
+    for j in 0:(Nl - 1)
+        denom += nu^(2*j) * kappa^(2*j)
+        sum3 += nu^(2*j) * kappa^(2*j) * j
+        sum4 += nu^(2*j) * kappa^(2*j)
+    end
+    l = layer - 1
+    sum1 = nu^(2*l) * kappa^(2*l) * omega^l * l
+    sum2 = nu^(2*l) * kappa^(2*l) * omega^l
+    return -(l + 1) * (-1/kappa) * (2 * conj(omega) * sum1 + sum2 * sum3 / sum4) / denom
+end
+
+function rmg_delta_exp_layer(kappa, nu, Nl, layer)
+    omega = exp(im * 2 * pi / 3)
+    nmz = 10^(-16)
+    num = 10^(-16)
+    for j in 0:(Nl - 1)
+        nmz += nu^(2*j) * kappa^(2*j)
+    end
+    l = layer - 1
+    num = -exp(-l - 1) * nu^(2*l) * kappa^(2*l) * omega^l
+    return num / nmz
+end
+
+function rmg_alpha_exp_layer(kappa, nu, Nl, layer)
+    omega = exp(im * 2 * pi / 3)
+    denom = 10^(-16)
+    sum1 = 10^(-16)
+    sum2 = 10^(-16)
+    sum3 = 10^(-16)
+    sum4 = 10^(-16)
+    for j in 0:(Nl - 1)
+        denom += nu^(2*j) * kappa^(2*j)
+        sum3 += nu^(2*j) * kappa^(2*j) * j
+        sum4 += nu^(2*j) * kappa^(2*j)
+    end
+    l = layer - 1
+    sum1 = nu^(2*l) * kappa^(2*l) * omega^l * l
+    sum2 = nu^(2*l) * kappa^(2*l) * omega^l
+    return -exp(-l - 1) * (-1/kappa) * (2 * conj(omega) * sum1 + sum2 * sum3 / sum4) / denom
+end
+
+
+function rmg_inf_layer_delta(kappa, nu, layer, g)
+    omega = exp(im * 2 * pi / 3)
+    l = layer - 1
+    return omega^l * g * (kappa * nu)^(2 * l) * (1 - kappa^2 * nu^2)
+end
+
+function rmg_inf_layer_alpha(kappa, nu, layer, g)
+    omega = exp(im * 2 * pi / 3)
+    l = layer - 1
+    return ((-1/kappa) * omega^l * g * (kappa * nu)^(2 * l) * (kappa^2 * nu^2 + 
+    2 * conj(omega) * l * (1 - kappa^2 * nu^2))) 
+end
+

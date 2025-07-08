@@ -72,16 +72,18 @@ end
 
 function spinor_inner(C1, C2, q1_spinor, q2_spinor)
     val = 0
-    for m in 1:3
-        val += conj(C1[m]) * C2[m] * dot(q1_spinor[m, :], q2_spinor[m, :])
-    end
     norm1 = 0
     norm2 = 0
-    for m in 1:3
-        norm1 += conj(C1[m]) * C1[m] * dot(q1_spinor[m, :], q1_spinor[m, :])
-        norm2 += conj(C2[m]) * C2[m] * dot(q2_spinor[m, :], q2_spinor[m, :])
+    spinor_inner!(val, norm1, norm2, C1, C2, q1_spinor, q2_spinor)
+end
+
+function spinor_inner!(val, n1, n2, C1, C2, q1_spinor, q2_spinor)
+    for m in 1:length(C1)
+        val += conj(C1[m]) * C2[m] * dot(q1_spinor[m, :], q2_spinor[m, :])
+        n1 += conj(C1[m]) * C1[m] * dot(q1_spinor[m, :], q1_spinor[m, :])
+        n2 += conj(C2[m]) * C2[m] * dot(q2_spinor[m, :], q2_spinor[m, :])
     end
-    return val / sqrt(norm1 * norm2)
+    return val / sqrt(n1 * n2)
 end
 
 function ff_spinor_inner(C1, C2, form_factors)
@@ -148,11 +150,27 @@ function vF_analytic_eigenvalues(alpha, delta, x, y, vF)
     C = (2 * x * (v^3 - 3 * v * abs2(alpha) + 2 * real(alpha^3)) * (x^2 - 3 * y^2) - 
     6 * (x^2 + y^2) * real(delta * alpha^2 + 2 * v * alpha * conj(delta)) + 2 * real(delta^3))
     epsilons = Array{Float64}(undef, 3)
-    epsilons[3] = real(2 * sqrt(B/3) * cos(1/3 * acos(3*C / (2 * B) * sqrt(3/B)) - 0*2 * pi/3))
-    epsilons[2] = real(2 * sqrt(B/3) * cos(1/3 * acos(3*C / (2 * B) * sqrt(3/B)) - 1*2 * pi/3))
-    epsilons[1] = real(2 * sqrt(B/3) * cos(1/3 * acos(3*C / (2 * B) * sqrt(3/B)) - 2*2 * pi/3))
-    return epsilons
+    epsilons[3] = 2 * sqrt(B/3) * cos(1/3 * acos(3*C / (2 * B) * sqrt(3/B)) - 0*2 * pi/3)
+    epsilons[2] = 2 * sqrt(B/3) * cos(1/3 * acos(3*C / (2 * B) * sqrt(3/B)) - 1*2 * pi/3)
+    epsilons[1] = 2 * sqrt(B/3) * cos(1/3 * acos(3*C / (2 * B) * sqrt(3/B)) - 2*2 * pi/3)
+    return real.(epsilons)
 end
+
+# function vF_analytic_eigenvalues(alpha, delta, x, y, vF)
+#     v = vF
+#     B = -(3 * (x^2 + y^2) * (v^2 + 2 * abs2(alpha)) + 3 * abs2(delta))
+#     C = (-(2 * x * (v^3 - 3 * v * abs2(alpha) + 2 * real(alpha^3)) * (x^2 - 3 * y^2) - 
+#     6 * (x^2 + y^2) * real(delta * alpha^2 + 2 * v * alpha * conj(delta)) + 2 * real(delta^3)))
+#     del = (C/2)^2 + (B/3)^3
+#     u = (-C/2 + sqrt(Complex(del)))^(1/3)
+#     w = (-C/2 - sqrt(Complex(del)))^(1/3)
+#     omega = exp(im * 2 * pi/3)
+#     epsilons = Array{Float64}(undef, 3)
+#     epsilons[3] = real(u + w)
+#     epsilons[1] = real(omega * u + conj(omega) * w)
+#     epsilons[2] = real(conj(omega) * u + omega * w)
+#     return epsilons
+# end
 
 function analytic_eigenvectors(epsilon, alpha, delta, x, y)
     # convenience

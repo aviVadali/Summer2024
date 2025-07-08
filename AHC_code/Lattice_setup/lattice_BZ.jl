@@ -1,7 +1,9 @@
 # polar angle of point in range [0, 2 * pi)
 function polar_angle(x, y)
     ang = 0
-    if x < 0
+    if x == 0 && y == 0
+        ang = 0
+    elseif x < 0
         ang = atan(y/x) + pi
     else
         ang = atan(y/x)
@@ -87,6 +89,39 @@ function make_hex(center, rad, spacing)
     points[:, 2] = y_c .+ center[2] * ones(size(y_c)[1])
     return points
 end
+# make the outline of a hexagon
+function hex_outline(center, radius, spacing)
+    cx, cy = center
+    # Compute the 6 corners of the hexagon
+    corners = [(cx + radius * cos(theta), cy + radius * sin(theta)) for theta in 0:pi/3:5pi/3]
+
+    # Generate points along the 6 edges (including corners)
+    frame_points = Set(corners)  # Use a Set to avoid duplicate corner points
+
+    for i in 1:6
+        p1 = corners[i]
+        p2 = corners[mod1(i+1, 6)]  # Next corner (modulo 6)
+        edge_vector = (p2[1] - p1[1], p2[2] - p1[2])
+        edge_length = sqrt(edge_vector[1]^2 + edge_vector[2]^2)
+        n_segments = max(1, round(Int, edge_length / spacing))
+
+        for j in 1:(n_segments-1)
+            t = j / n_segments
+            px = (1 - t) * p1[1] + t * p2[1]
+            py = (1 - t) * p1[2] + t * p2[2]
+            push!(frame_points, (px, py))
+        end
+    end
+    temp = collect(frame_points)
+    
+    grid = Array{Float64}(undef, size(temp, 1), 2)
+    for j in 1:size(temp, 1)
+        grid[j, 1] = temp[j][1]
+        grid[j, 2] = temp[j][2]
+    end
+    return grid
+end
+
 # plaquette area for sidelength s, N-gon
 function area(s, N)
     return (1/4) * N * s^2 * cot(pi/N)

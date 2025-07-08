@@ -28,4 +28,4 @@ ky=0.1
 shared_dir="uni_bc_outputs/nu=${nu}_Vs=${V}_shells=${shells}_spacing=${spacing}"
 mkdir -p "$shared_dir"
 
-qsub -v kx=$kx,ky=$ky,Nl=$Nl,nu=$nu,kappa=$kappa,V=$V,shells=$shells,index=$index,spacing=$spacing,dirname=$shared_dir uni_chern_script.txt
+qsub -v kx=$kx,ky=$ky,Nl=$Nl,nu=$nu,kappa=$kappa,V=$V,shells=$shells,index=$index,spacing=$spacing,dirname=$shared_dir /home/avadali/Summer2024/AHC_code/cluster_scripts/uni_chern_script.txt

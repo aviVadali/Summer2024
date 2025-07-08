@@ -1,0 +1,15 @@
+#!/bin/sh
+ #PBS -N D4_mRB_job
+ #PBS -o /home/avadali/Summer2024/job_outputs/${PBS_JOBID%%.*}.$PBS_JOBNAME.out
+ #PBS -e /home/avadali/Summer2024/job_outputs/${PBS_JOBID%%.*}.$PBS_JOBNAME.err
+ #PBS -l nodes=1:ppn=1
+ #PBS -l walltime=00:05:00
+ #PBS -l mem=1gb
+
+cd /home/avadali/Summer2024/cluster_scripts/
+
+PYTHONPATH="/home/avadali/Summer2024/cluster_scripts/"
+export OMP_NUM_THREADS=4
+source /home/avadali/venv-python/bin/activate
+python3 uni_berry.py $kx $ky $Nl $nu $kappa $V $shells $index $spacing $dirname
+deactivate

@@ -52,6 +52,27 @@ function H_mft_v2(k, delt, alph)
     return mat0 + 1/2 * mat1
 end
 
+# function full_3p_ham(k, delta, alpha, vF)
+#     omega = exp(2*pi/3 * im)
+
+#     delta_mat = [0 delta conj(delta); 
+#     conj(delta) 0 delta; 
+#     delta conj(delta) 0]
+
+#     q = k[1] + im * k[2]
+
+#     alpha_mat = 1/2 * [0 alpha * (q + conj(q)) conj(alpha) * (omega * q + conj(omega * q));
+#                 conj(alpha) * (q + conj(q)) 0 alpha * (conj(omega) * q + omega * conj(q));
+#                 alpha * (omega * q + conj(omega * q)) conj(alpha) * (conj(omega) * q + omega * conj(q)) 0]
+
+#     n1 = [cos(0), sin(0)]
+#     n3 = [cos(2 * pi / 3), sin(2 * pi / 3)]
+#     n5 = [cos(4 * pi / 3), sin(4 * pi / 3)]
+#     v_mat = vF * [dot(k, n1) 0 0; 0 dot(k, n3) 0; 0 0 dot(k, n5)]
+
+#     return delta_mat + alpha_mat + v_mat
+# end
+
 function gauge_fix(state)
     entry = state[1]
     phi = angle(entry / abs(entry))
@@ -72,12 +93,8 @@ end
 
 function spinor_inner(C1, C2, q1_spinor, q2_spinor)
     val = 0
-    norm1 = 0
-    norm2 = 0
-    spinor_inner!(val, norm1, norm2, C1, C2, q1_spinor, q2_spinor)
-end
-
-function spinor_inner!(val, n1, n2, C1, C2, q1_spinor, q2_spinor)
+    n1 = 0
+    n2 = 0
     for m in 1:length(C1)
         val += conj(C1[m]) * C2[m] * dot(q1_spinor[m, :], q2_spinor[m, :])
         n1 += conj(C1[m]) * C1[m] * dot(q1_spinor[m, :], q1_spinor[m, :])
@@ -94,7 +111,7 @@ function ff_spinor_inner(C1, C2, form_factors)
     return val
 end
 
-function bc_no_spinors(points, spacing, vF, delt, alph)
+function bc_no_spinors(points, spacing, vF, delt, alph, index)
     berry_list = Array{Float64}(undef, size(points)[1])
     for i in 1:size(points)[1]
         # get flux through plaquette centered at point
@@ -108,7 +125,7 @@ function bc_no_spinors(points, spacing, vF, delt, alph)
             momentum = norm([x_new, y_new])
             theta = polar_angle(x_new, y_new)
             ham = H_mft(momentum, theta, delt, alph) + H_k(momentum, theta, vF)
-            gs = eigvecs(Hermitian(ham))[:, 1]
+            gs = eigvecs(Hermitian(ham))[:, index]
             states[j, :] = gauge_fix(normalize(gs))
         end
         P = 1
@@ -153,7 +170,7 @@ function vF_analytic_eigenvalues(alpha, delta, x, y, vF)
     epsilons[3] = 2 * sqrt(B/3) * cos(1/3 * acos(3*C / (2 * B) * sqrt(3/B)) - 0*2 * pi/3)
     epsilons[2] = 2 * sqrt(B/3) * cos(1/3 * acos(3*C / (2 * B) * sqrt(3/B)) - 1*2 * pi/3)
     epsilons[1] = 2 * sqrt(B/3) * cos(1/3 * acos(3*C / (2 * B) * sqrt(3/B)) - 2*2 * pi/3)
-    return real.(epsilons)
+    return real.(sort(epsilons))
 end
 
 # function vF_analytic_eigenvalues(alpha, delta, x, y, vF)
